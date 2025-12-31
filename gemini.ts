@@ -2,17 +2,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { Transaction, BankAccount, Category } from './types';
 
-const apiKey = process.env.API_KEY || "";
-
+// Obtain the API key exclusively from process.env.API_KEY
 export const getAIFinanceAdvice = async (
   transactions: Transaction[],
   accounts: BankAccount[],
   categories: Category[]
 ): Promise<string> => {
-  if (!apiKey) return "目前處於展示模式，且未設定 API Key。請設定 API_KEY 以獲得 AI 財務建議。";
+  if (!process.env.API_KEY) return "目前處於展示模式，且未設定 API Key。請設定 API_KEY 以獲得 AI 財務建議。";
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Fix: Strictly initialize GoogleGenAI as per SDK guidelines using process.env.API_KEY directly
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Using gemini-3-pro-preview for complex financial analysis reasoning
     const modelName = 'gemini-3-pro-preview';
 
     const prompt = `
@@ -30,11 +31,13 @@ export const getAIFinanceAdvice = async (
       請給予具體、有行動力的建議，語氣專業且溫暖。
     `;
 
+    // Fix: Call generateContent with model and contents as specified in the guidelines
     const response = await ai.models.generateContent({
       model: modelName,
       contents: prompt,
     });
 
+    // Fix: Access the .text property directly (not a method) from GenerateContentResponse
     return response.text || "無法生成建議，請稍後再試。";
   } catch (error) {
     console.error("Gemini Error:", error);
