@@ -1,4 +1,3 @@
-
 name: Build and Deploy
 
 on:
@@ -20,7 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # 已移除 cache: 'npm' 以避免找不到 package-lock.json 的錯誤
 
       - name: Install dependencies
         run: npm install
