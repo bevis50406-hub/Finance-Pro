@@ -1,10 +1,10 @@
-
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Transaction, BankAccount, Category } from './types';
 
 // 封裝一個安全獲取 AI 實例的方法
 const getAIInstance = () => {
   const apiKey = process.env.API_KEY;
+  // 檢查是否為空字串或佔位符
   if (!apiKey || apiKey.trim() === "" || apiKey === "YOUR_API_KEY") {
     throw new Error("API_KEY_MISSING");
   }
@@ -12,7 +12,7 @@ const getAIInstance = () => {
 };
 
 /**
- * 根據理財建議的複雜推理需求，升級至 gemini-3-pro-preview 模型。
+ * 獲取理財建議，使用更快速的 flash 模型。
  */
 export const getAIFinanceAdvice = async (
   transactions: Transaction[],
@@ -21,8 +21,7 @@ export const getAIFinanceAdvice = async (
 ): Promise<string> => {
   try {
     const ai = getAIInstance();
-    // 理財分析屬於複雜文本任務，使用 Pro 模型
-    const modelName = 'gemini-3-pro-preview';
+    const modelName = 'gemini-3-flash-preview';
 
     const prompt = `
       作為一位專業財務顧問，請根據以下真實數據提供一段簡短理財建議（繁體中文）：
@@ -31,25 +30,23 @@ export const getAIFinanceAdvice = async (
       建議字數約 80 字，要專業、具體且語氣親切。
     `;
 
-    // 直接使用 ai.models.generateContent 並傳入模型名稱與提示
     const response = await ai.models.generateContent({
       model: modelName,
       contents: prompt,
     });
 
-    // 正確用法：訪問 .text 屬性獲取結果
     return response.text || "AI 目前無法產出建議，請稍後再試。";
   } catch (error: any) {
     if (error.message === "API_KEY_MISSING") {
-      return "目前的系統處於展示模式。若要啟用 AI 智慧分析建議，請在環境變數中設定 API Key。";
+      return "目前的系統處於展示模式。若要啟用 AI 智慧分析建議，請在環境變數中設定有效的 API Key。";
     }
     console.error("Gemini Advice Error:", error);
-    return "AI 智慧服務暫時連線異常。";
+    return "AI 智慧服務暫時連線異常，請檢查網路或 API 設定。";
   }
 };
 
 /**
- * 建立對話 Session，同樣使用 Pro 模型以處理理財諮詢。
+ * 建立對話 Session
  */
 export const createFinanceChat = (
   transactions: Transaction[],
@@ -59,7 +56,7 @@ export const createFinanceChat = (
   try {
     const ai = getAIInstance();
     return ai.chats.create({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: `
           你是一位專業且親切的 AI 財務助理 "FinancePro Helper"。
@@ -76,7 +73,7 @@ export const createFinanceChat = (
         `,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to create Chat session:", error);
     throw error;
   }

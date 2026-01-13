@@ -27,11 +27,12 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
         chatRef.current = createFinanceChat(transactions, accounts, []);
         setErrorStatus(null);
       } catch (err: any) {
-        setErrorStatus(err.message === "API_KEY_MISSING" ? "尚未設定 API Key" : "AI 初始化失敗");
+        const msg = err.message === "API_KEY_MISSING" ? "尚未設定 API Key" : "AI 初始化失敗";
+        setErrorStatus(msg);
         console.error("Chat Init Error:", err);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, transactions, accounts]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -49,13 +50,24 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
     setIsLoading(true);
 
     try {
-      if (!chatRef.current) throw new Error('Chat session not started');
+      if (!chatRef.current) {
+        // 嘗試重新建立
+        chatRef.current = createFinanceChat(transactions, accounts, []);
+      }
       
       const result = await chatRef.current.sendMessage({ message: userMsg });
-      setMessages(prev => [...prev, { role: 'ai', content: result.text || '我暫時無法回應，請稍後再試。' }]);
+      setMessages(prev => [...prev, { role: 'ai', content: result.text || '我目前無法產出回應，請稍後再試。' }]);
     } catch (err: any) {
       console.error("Gemini Send Error:", err);
-      setMessages(prev => [...prev, { role: 'ai', content: '對不起，目前與 AI 連線出現問題。請確認 API Key 是否正確。' }]);
+      let errorMsg = '對不起，連線發生錯誤。';
+      
+      if (err.message?.includes('403') || err.message?.includes('API_KEY_INVALID')) {
+        errorMsg = 'API Key 無效或沒有權限，請確認設定是否正確。';
+      } else if (err.message?.includes('quota')) {
+        errorMsg = '已達到 AI 使用額度限制，請稍後再試。';
+      }
+      
+      setMessages(prev => [...prev, { role: 'ai', content: errorMsg }]);
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +87,7 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
             </div>
             <div>
               <h2 className="font-black">智慧財務助手</h2>
-              <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-widest">Powered by Gemini 3.0</p>
+              <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-widest">Powered by Gemini AI</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
@@ -123,13 +135,13 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
           <input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={!!errorStatus}
+            disabled={isLoading}
             placeholder={errorStatus ? "AI 尚未就緒..." : "詢問財務分析或建議..."}
             className="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-600 disabled:opacity-50"
           />
           <button 
             type="submit" 
-            disabled={!input.trim() || isLoading || !!errorStatus}
+            disabled={!input.trim() || isLoading}
             className="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:scale-95"
           >
             <Send size={20} />
