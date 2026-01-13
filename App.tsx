@@ -15,9 +15,8 @@ import {
   User as UserIcon,
   Settings
 } from 'lucide-react';
-// Separate function and type imports for Firebase Auth
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+// Fix: Use consolidated import syntax to resolve "no exported member" errors
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, isFirebaseEnabled } from './firebase';
 import { BankAccount, Transaction, Goal, Budget } from './types';
 import { MOCK_ACCOUNTS, MOCK_TRANSACTIONS, CATEGORIES } from './constants';

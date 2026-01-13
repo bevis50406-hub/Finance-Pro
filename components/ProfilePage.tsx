@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
 import { User as UserIcon, Mail, Calendar, Edit3, Shield, Key, LogOut, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
-// Separate function and type imports for Firebase Auth
-import { updateProfile } from 'firebase/auth';
-import type { User as FirebaseUser } from 'firebase/auth';
+// Fix: Use consolidated import statement to resolve missing export errors
+import { updateProfile, type User as FirebaseUser } from 'firebase/auth';
 
 interface ProfilePageProps {
   user: FirebaseUser | null;

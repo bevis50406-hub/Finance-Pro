@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-// Explicit function imports for Firebase Auth
+// Fix: Consolidate named imports to resolve export detection issues
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Mail, Lock, LogIn, UserPlus, PlayCircle, ShieldCheck } from 'lucide-react';
