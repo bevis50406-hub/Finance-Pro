@@ -1,7 +1,13 @@
 
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+// Separate type import for FirebaseApp
+import type { FirebaseApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+// Separate type import for Auth
+import type { Auth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+// Separate type import for Firestore
+import type { Firestore } from 'firebase/firestore';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;

@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, User, Sparkles } from 'lucide-react';
+import { X, Send, Bot, User, Sparkles, AlertCircle } from 'lucide-react';
 import { Transaction, BankAccount } from '../types';
 import { createFinanceChat } from '../gemini';
 import { Chat } from '@google/genai';
@@ -18,12 +17,19 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const chatRef = useRef<Chat | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && !chatRef.current) {
-      chatRef.current = createFinanceChat(transactions, accounts, []);
+      try {
+        chatRef.current = createFinanceChat(transactions, accounts, []);
+        setErrorStatus(null);
+      } catch (err: any) {
+        setErrorStatus(err.message === "API_KEY_MISSING" ? "尚未設定 API Key" : "AI 初始化失敗");
+        console.error("Chat Init Error:", err);
+      }
     }
   }, [isOpen]);
 
@@ -31,11 +37,11 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || errorStatus) return;
 
     const userMsg = input.trim();
     setInput('');
@@ -47,8 +53,9 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
       
       const result = await chatRef.current.sendMessage({ message: userMsg });
       setMessages(prev => [...prev, { role: 'ai', content: result.text || '我暫時無法回應，請稍後再試。' }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'ai', content: '對不起，目前與 AI 連線出現問題。' }]);
+    } catch (err: any) {
+      console.error("Gemini Send Error:", err);
+      setMessages(prev => [...prev, { role: 'ai', content: '對不起，目前與 AI 連線出現問題。請確認 API Key 是否正確。' }]);
     } finally {
       setIsLoading(false);
     }
@@ -56,12 +63,10 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
 
   return (
     <>
-      {/* Backdrop */}
       {isOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60]" onClick={onClose}></div>
       )}
       
-      {/* Drawer */}
       <div className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-white shadow-2xl z-[70] transform transition-transform duration-500 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <header className="p-6 border-b border-slate-100 flex justify-between items-center bg-indigo-600 text-white">
           <div className="flex items-center gap-3">
@@ -79,6 +84,13 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
         </header>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+          {errorStatus && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-3 text-amber-700 text-sm font-bold">
+              <AlertCircle size={20} />
+              <span>{errorStatus}，AI 功能暫時無法使用。</span>
+            </div>
+          )}
+          
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -111,12 +123,13 @@ const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose, transactio
           <input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="詢問財務分析或建議..."
-            className="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-600"
+            disabled={!!errorStatus}
+            placeholder={errorStatus ? "AI 尚未就緒..." : "詢問財務分析或建議..."}
+            className="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-600 disabled:opacity-50"
           />
           <button 
             type="submit" 
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !!errorStatus}
             className="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:scale-95"
           >
             <Send size={20} />

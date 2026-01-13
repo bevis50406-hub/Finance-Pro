@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Wallet, 
@@ -11,9 +11,13 @@ import {
   ShieldAlert,
   Target,
   PieChart as PieChartIcon,
-  MessageSquareText
+  MessageSquareText,
+  User as UserIcon,
+  Settings
 } from 'lucide-react';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+// Separate function and type imports for Firebase Auth
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { auth, isFirebaseEnabled } from './firebase';
 import { BankAccount, Transaction, Goal, Budget } from './types';
 import { MOCK_ACCOUNTS, MOCK_TRANSACTIONS, CATEGORIES } from './constants';
@@ -22,6 +26,7 @@ import AccountsPage from './components/AccountsPage';
 import TransactionsPage from './components/TransactionsPage';
 import GoalsPage from './components/GoalsPage';
 import BudgetPage from './components/BudgetPage';
+import ProfilePage from './components/ProfilePage';
 import AIChatDrawer from './components/AIChatDrawer';
 import LoginPage from './components/LoginPage';
 import { clsx, type ClassValue } from 'clsx';
@@ -111,9 +116,25 @@ const App: React.FC = () => {
             <NavLink to="/budget" icon={<PieChartIcon size={20} />} label="預算管理" />
           </nav>
 
-          <div className="p-4 border-t border-slate-100">
+          <div className="p-4 border-t border-slate-100 space-y-4">
+            {/* User Profile Summary */}
+            <Link to="/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-105 transition-transform">
+                {user?.displayName?.[0] || user?.email?.[0]?.toUpperCase() || 'D'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 truncate">
+                  {user?.displayName || (isDemoMode ? '展示使用者' : '未設定名稱')}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {user?.email || 'demo-mode@financepro.com'}
+                </p>
+              </div>
+              <Settings size={16} className="text-slate-300 group-hover:text-indigo-600 group-hover:rotate-45 transition-all" />
+            </Link>
+
             <div className={cn(
-              "flex items-center gap-2 p-3 rounded-lg mb-4 text-xs font-medium uppercase tracking-wider",
+              "flex items-center gap-2 p-3 rounded-lg text-xs font-medium uppercase tracking-wider",
               isDemoMode ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
             )}>
               {isDemoMode ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />}
@@ -122,7 +143,7 @@ const App: React.FC = () => {
             
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
             >
               <LogOut size={20} />
               <span className="font-medium">登出系統</span>
@@ -139,6 +160,7 @@ const App: React.FC = () => {
           <Route path="/transactions" element={isAuthenticated ? <TransactionsPage transactions={transactions} accounts={accounts} /> : <Navigate to="/login" />} />
           <Route path="/goals" element={isAuthenticated ? <GoalsPage goals={goals} setGoals={setGoals} /> : <Navigate to="/login" />} />
           <Route path="/budget" element={isAuthenticated ? <BudgetPage budgets={budgets} setBudgets={setBudgets} transactions={transactions} /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={isAuthenticated ? <ProfilePage user={user} isDemoMode={isDemoMode} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         </Routes>
 
         {/* AI Chat Toggle Button */}
