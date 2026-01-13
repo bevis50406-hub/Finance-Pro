@@ -26,6 +26,20 @@ export interface Transaction {
   note: string;
 }
 
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  color: string;
+  deadline?: string;
+}
+
+export interface Budget {
+  categoryId: string;
+  limit: number;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
